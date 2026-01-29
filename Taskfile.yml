@@ -62,3 +62,11 @@ tasks:
       - rm -rf results
       - rm -rf .venv
       - rm -f *.pyi
+
+
+  # -- Git-related tasks
+  git-push:
+    desc: push changes to the remote repository
+    cmds:
+      - git push -u origin --all
+      - git push -u wd --all
