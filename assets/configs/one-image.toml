@@ -1,0 +1,28 @@
+[predict]
+
+# paths
+model = "assets/checkpoints/yolo11n-seg.onnx"
+source = "assets/images/small-batch/bus.jpg"
+save_dir = "results/demo"
+
+# infer
+conf = 0.25
+iou = 0.45
+half = true
+batch = 4
+device = "cuda:0"
+infer_fn = "BatchChannelPipeline"
+
+# results
+annotate = true
+return_result = false
+
+# logging
+verbose = false
+
+
+[annotate]
+on_blank = false
+show_box = true
+show_label = true
+show_conf = true

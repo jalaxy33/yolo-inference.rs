@@ -1,0 +1,16 @@
+
+# imports
+imports_indent = "Visual"
+imports_granularity = "Module"
+
+# comment
+wrap_comments = true
+comment_width = 120
+format_code_in_doc_comments = true
+
+# macro
+format_macro_matchers = true
+
+# -- struct
+# E.g. Foo { a, b, c }
+use_field_init_shorthand = true

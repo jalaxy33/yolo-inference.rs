@@ -1,0 +1,30 @@
+# build files
+target/
+build/
+.cache/
+
+# IDE files
+.vscode/
+
+# python venv
+.venv/
+
+# Byte-compiled / optimized / DLL files
+**/__pycache__/
+**/.pytest_cache/
+**/*.py[cod]
+
+# generated stub files
+**/*.pyi
+
+# large data
+data/
+assets/ignore/
+assets/checkpoints/
+
+# 3rd party libraries
+external/
+
+# results
+results/
+

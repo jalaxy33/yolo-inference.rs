@@ -1,0 +1,64 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+
+tasks:
+  default:
+    desc: Print a greeting message
+    cmds:
+      - task: develop
+
+  # -- Python-related tasks
+
+  init-py:
+    desc: Initialize the dependencies
+    cmds:
+      - uv sync
+
+  stubgen:
+    desc: Generate stub file
+    cmds:
+      - cargo run --bin genstub --features python
+    deps:
+      - init-py
+
+  develop:
+    desc: Build the Rust extension
+    cmds:
+      - uv run maturin develop -r --features python
+    deps:
+      - stubgen
+
+  # -- C++-related tasks
+
+  cpp:
+    desc: Build the C++ extension (default release mode)
+    cmds:
+      - task: cpp-release
+
+  cpp-debug:
+    desc: Build the C++ extension in debug mode
+    cmds:
+      - cargo build --release --features cpp
+      - cmake -B build/Debug -DCMAKE_BUILD_TYPE=Debug
+      - cmake --build build/Debug
+
+  cpp-release:
+    desc: Build the C++ extension in release mode
+    cmds:
+      - cargo build --release --features cpp
+      - cmake -B build/Release -DCMAKE_BUILD_TYPE=Release
+      - cmake --build build/Release
+
+
+  # -- Cleanup tasks
+
+  clean:
+    desc: Clean build and run artifacts
+    cmds:
+      - cargo clean
+      - rm -rf build
+      - rm -rf .cache
+      - rm -rf results
+      - rm -rf .venv
+      - rm -f *.pyi

@@ -1,0 +1,55 @@
+[package]
+name = "yolo-inference"
+version = "0.1.0"
+edition = "2024"
+default-run = "infer_main"
+
+[lib]
+name = "yolo_inference"
+crate-type = ["rlib", "cdylib"]
+
+# main binary
+[[bin]]
+name = "infer_main"
+path = "src/main.rs"
+
+# generate python stub files (.pyi)
+[[bin]]
+name = "genstub"
+path = "src/ffi/bin/genstub.rs"
+required-features = ["python"]
+
+
+[dependencies]
+ab_glyph = "^0.2"
+anyhow = "1.0.100"
+image = "^0.25"
+imageproc = "^0.26"
+indicatif = { version = "^0.18", features = ["rayon"] }
+tracing = "^0.1"
+tracing-subscriber = "^0.3"
+ultralytics-inference = { version = "*", git = "https://github.com/ultralytics/inference.git" }
+toml = "^0.9"
+serde = { version = "^1.0", features = ["derive"] }
+strum = { version = "^0.27", features = ["derive"] }
+
+# C++ FFI dependencies
+cxx = { version = "^1.0", optional = true }
+
+# Python FFI dependencies
+pyo3 = { version = "^0.27", optional = true, features = ["extension-module"] }
+pyo3-stub-gen = { version = "^0.18", optional = true }
+
+[build-dependencies]
+cxx-build = { version = "^1.0", features = ["parallel"], optional = true }
+
+[features]
+default = ["cuda", "tensorrt"]
+
+# Backend features
+cuda = ["ultralytics-inference/cuda"]
+tensorrt = ["ultralytics-inference/tensorrt"]
+
+# FFI features
+cpp = ["dep:cxx", "dep:cxx-build"]
+python = ["dep:pyo3", "dep:pyo3-stub-gen"]
