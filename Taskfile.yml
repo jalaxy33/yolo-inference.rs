@@ -70,6 +70,6 @@ tasks:
     desc: push changes to the remote repository
     cmds:
       - git push origin --all
-      - git push origin --tags
+      - git push --force origin --tags
       - git push wd --all
-      - git push wd --tags
+      - git push --force wd --tags
