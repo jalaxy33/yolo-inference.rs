@@ -69,4 +69,6 @@ tasks:
     desc: push changes to the remote repository
     cmds:
       - git push -u origin --all
+      - git push -u origin --tags
       - git push -u wd --all
+      - git push -u wd --tags
