@@ -1,6 +1,6 @@
 # yolo-inference.rs
 
-Rust YOLO inference library built on [ultralytics-inference](https://github.com/ultralytics/inference). Supports multiple hardware backends and deployment platforms.
+A Rust YOLO inference library built on [ultralytics-rust](https://github.com/ultralytics/inference), offering Rust, C++, and Python bindings for efficient model inference.
 
 ## Quick Start
 
@@ -33,7 +33,7 @@ cmake --build build/Release
 ```bash
 # Build and install as python module
 # in some platforms, you may need to use `go-task develop` instead
-task develop  
+task develop
 
 # Run demo
 uv run python/main.py
@@ -61,25 +61,27 @@ show_conf = true
 
 ## Inference Modes
 
-| Mode | Description |
-|------|-------------|
-| Sequential | Single image processing |
-| BatchSequential | Batch processing without parallelism |
-| ChannelPipeline | Multi-threaded pipeline |
-| BatchChannelPipeline | Batch + pipeline (default) |
+| Mode                 | Description                          |
+| -------------------- | ------------------------------------ |
+| Sequential           | Single image processing              |
+| BatchSequential      | Batch processing without parallelism |
+| ChannelPipeline      | Multi-threaded pipeline              |
+| BatchChannelPipeline | Batch + pipeline (default)           |
 
 ## Requirements
 
 ### Rust
+
 - [rustup](https://rustup.rs/) - Rust toolchain manager
 - nightly toolchain: `rustup toolchain install nightly`
 - [cranelift](https://github.com/rust-lang/rustc_codegen_cranelift#download-using-rustup) - Code generator
 
-
 ### C++
+
 - C++ compiler (g++ / clang++ / MSVC)
 - [cmake](https://cmake.org/download/) - Build system
 
 ### Python
+
 - [uv](https://docs.astral.sh/uv/) - Python package manager
 - [task](https://taskfile.dev/) - Task runner
