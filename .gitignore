@@ -6,6 +6,10 @@ build/
 # IDE files
 .vscode/
 
+# Github 
+.github/
+.wiki/
+
 # python venv
 .venv/
 
@@ -27,4 +31,3 @@ external/
 
 # results
 results/
-
