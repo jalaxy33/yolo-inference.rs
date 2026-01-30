@@ -6,8 +6,8 @@ tasks:
   default:
     desc: Print a greeting message
     cmds:
-      - task: develop
       - task: cpp
+      - task: develop
 
   # -- Python-related tasks
 

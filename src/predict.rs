@@ -1,10 +1,10 @@
-use anyhow::Result;
 use serde::Deserialize;
 use std::path::PathBuf;
 use std::time::Instant;
 use ultralytics_inference as ul;
 
 use crate::annotate::AnnotateConfigs;
+use crate::error::{AppError, Result};
 use crate::infer_fn::{InferFn, InferResult, auto_infer, deserialize_infer_fn};
 use crate::source::{Source, deserialize_source};
 
@@ -102,7 +102,8 @@ pub fn run_prediction(args: &PredictArgs) -> Result<Option<Vec<InferResult>>> {
     let device: Option<ul::Device> = args
         .device
         .as_ref()
-        .map(|d| d.parse().expect("Invalid device"));
+        .map(|d| d.parse().map_err(|_| AppError::InvalidDevice(d.clone())))
+        .transpose()?;
     let batch_size = args.batch.unwrap_or(1);
     let infer_fn = &args.infer_fn;
     let return_annotated = args.return_result;
@@ -122,13 +123,8 @@ pub fn run_prediction(args: &PredictArgs) -> Result<Option<Vec<InferResult>>> {
         config = config.with_device(dev);
     }
 
-    let mut model = match ul::YOLOModel::load_with_config(model_path, config) {
-        Ok(m) => m,
-        Err(e) => {
-            eprintln!("Failed to load model: {}", e);
-            return Err(e.into());
-        }
-    };
+    let mut model = ul::YOLOModel::load_with_config(model_path, config)
+        .map_err(|e| AppError::ModelLoad(e.to_string()))?;
 
     // Perform inference
     let mut final_results = if return_annotated {

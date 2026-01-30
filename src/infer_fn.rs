@@ -11,13 +11,13 @@ pub use channel_ppl::channel_pipeline_infer;
 pub use sequential::sequential_infer;
 
 // -- external imports
-use anyhow::Result;
 use image::DynamicImage;
 use serde::Deserialize;
 use std::str::FromStr;
 use strum::{Display, EnumString, VariantNames};
 use ultralytics_inference as ul;
 
+use crate::error::Result;
 use crate::predict::PredictArgs;
 use crate::source::SourceMeta;
 

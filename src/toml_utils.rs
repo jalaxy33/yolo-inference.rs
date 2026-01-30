@@ -1,9 +1,9 @@
 // -- imports
-use anyhow::Result;
 use serde::Deserialize;
 use std::path::PathBuf;
 
 use crate::annotate::AnnotateConfigs;
+use crate::error::{AppError, Result};
 use crate::predict::PredictArgs;
 
 // -- config
@@ -20,16 +20,16 @@ impl TomlConfig {
     ///
     /// # Errors
     ///
-    /// Returns `anyhow::Error` if:
+    /// Returns `AppError` if:
     /// - The path is not a valid toml file
     /// - File read fails
     /// - TOML parsing fails
     pub fn from_toml(toml_path: &PathBuf) -> Result<Self> {
-        if !toml_path.is_file() || !toml_path.extension().map_or(false, |ext| ext == "toml") {
-            anyhow::bail!(
+        if !toml_path.is_file() || toml_path.extension().map_or(false, |ext| ext != "toml") {
+            return Err(AppError::Config(format!(
                 "TOML config path is not a valid .toml file: {:?}",
                 toml_path
-            );
+            )));
         }
 
         let content = std::fs::read_to_string(toml_path)?;

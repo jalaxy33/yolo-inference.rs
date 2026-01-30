@@ -3524,6 +3524,7 @@ dependencies = [
  "serde",
  "strum",
  "tempfile",
+ "thiserror",
  "toml",
  "tracing",
  "tracing-subscriber",

@@ -7,7 +7,6 @@ mod font;
 mod obb;
 mod pose;
 
-use anyhow::Result;
 use classification::draw_classification;
 use detection::draw_detection;
 use font::{is_ascii, load_font};
@@ -16,6 +15,7 @@ use pose::draw_pose;
 use serde::Deserialize;
 
 // -- external imports
+use crate::error::Result;
 use ab_glyph::FontRef;
 use image::{DynamicImage, GenericImageView, RgbImage};
 use ultralytics_inference as ul;

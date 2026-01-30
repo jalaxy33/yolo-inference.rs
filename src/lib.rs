@@ -1,4 +1,5 @@
 mod annotate;
+mod error;
 mod ffi;
 mod infer_fn;
 mod logging;
@@ -8,6 +9,7 @@ mod source;
 mod toml_utils;
 
 pub use annotate::{AnnotateConfigs, annotate_image};
+pub use error::{AppError, Result};
 pub use infer_fn::{InferFn, auto_infer};
 pub use logging::init_logger;
 pub use progress_bar::progress_bar_style;

@@ -1,4 +1,4 @@
-use anyhow::Result;
+use crate::error::{AppError, Result};
 use std::path::PathBuf;
 
 pub fn is_image_file(path: &PathBuf) -> bool {
@@ -13,7 +13,7 @@ pub fn is_image_file(path: &PathBuf) -> bool {
 
 pub fn collect_images_from_dir(dir: &PathBuf) -> Result<Vec<PathBuf>> {
     let mut image_paths = vec![];
-    for entry in std::fs::read_dir(dir)? {
+    for entry in std::fs::read_dir(dir).map_err(|e| AppError::ImageCollection(e.to_string()))? {
         if let Ok(entry) = entry {
             let path = entry.path();
             if path.is_file() && is_image_file(&path) {

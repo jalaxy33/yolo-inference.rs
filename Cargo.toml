@@ -26,6 +26,7 @@ anyhow = "1.0.100"
 image = "^0.25"
 imageproc = "^0.26"
 indicatif = { version = "^0.18", features = ["rayon"] }
+thiserror = "2.0"
 tracing = "^0.1"
 tracing-subscriber = "^0.3"
 ultralytics-inference = { version = "*", git = "https://github.com/ultralytics/inference.git" }

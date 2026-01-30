@@ -1,4 +1,3 @@
-use anyhow::Result;
 use image::DynamicImage;
 use indicatif::{ProgressBar, ProgressFinish};
 use std::sync::mpsc;
@@ -6,6 +5,7 @@ use std::thread;
 use ultralytics_inference as ul;
 
 use crate::annotate::annotate_image;
+use crate::error::Result;
 use crate::predict::PredictArgs;
 use crate::progress_bar::progress_bar_style;
 use crate::source::{SourceLoader, SourceMeta};

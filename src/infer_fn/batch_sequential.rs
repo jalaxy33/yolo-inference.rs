@@ -1,8 +1,8 @@
-use anyhow::Result;
 use indicatif::{ProgressBar, ProgressFinish};
 use ultralytics_inference as ul;
 
 use crate::annotate::annotate_image;
+use crate::error::Result;
 use crate::predict::PredictArgs;
 use crate::progress_bar::progress_bar_style;
 use crate::source::BatchSourceLoader;
