@@ -1,6 +1,7 @@
 /// An example of running different experiments based on TOML config files.
 use std::path::PathBuf;
 
+use anyhow::{Context, Result};
 use yolo_inference::{init_logger, parse_toml, run_prediction};
 
 #[allow(dead_code)]
@@ -11,7 +12,7 @@ enum Experiment {
     UnbatchableModel,
 }
 
-fn main() {
+fn main() -> Result<()> {
     init_logger();
 
     let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -25,11 +26,16 @@ fn main() {
         Experiment::UnbatchableModel => config_dir.join("unbatchable-model.toml"),
     };
 
-    let args = parse_toml(&config_toml).expect("Failed to parse TOML config");
+    let args = parse_toml(&config_toml)
+        .with_context(|| format!("Failed to parse TOML config: {:?}", config_toml))?;
 
     dbg!(&args);
 
-    if let Some(final_result) = run_prediction(&args).expect("Failed to run prediction") {
+    if let Some(final_result) = run_prediction(&args)
+        .with_context(|| format!("Failed to run prediction: {:?}", config_toml))?
+    {
         tracing::info!("Total annotated images returned: {}", final_result.len());
     }
+
+    Ok(())
 }

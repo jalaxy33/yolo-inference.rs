@@ -39,7 +39,7 @@ pub fn batch_sequential_infer(
         std::fs::create_dir_all(dir).expect("Failed to create save directory");
     }
 
-    let loader = BatchSourceLoader::new(source, Some(batch_size));
+    let loader = BatchSourceLoader::new(source, Some(batch_size))?;
     let total_batches = loader.len();
     let total_frames = loader.total_frames();
     tracing::info!("Total batches to process: {}", total_batches);

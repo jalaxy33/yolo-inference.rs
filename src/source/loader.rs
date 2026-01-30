@@ -2,6 +2,8 @@ use image::DynamicImage;
 use std::iter::ExactSizeIterator;
 use std::path::PathBuf;
 
+use crate::error::Result;
+
 use super::source_utils::{collect_images_from_dir, is_image_file};
 use super::{Source, SourceMeta};
 
@@ -19,7 +21,7 @@ pub struct SourceLoader {
 }
 
 impl SourceLoader {
-    pub fn new(source: &Source) -> Self {
+    pub fn new(source: &Source) -> Result<Self> {
         let frames = match source {
             Source::ImagePath(path) => {
                 if is_image_file(path) {
@@ -28,10 +30,7 @@ impl SourceLoader {
                     vec![]
                 }
             }
-            Source::Directory(dir_path) => collect_images_from_dir(dir_path)
-                .expect(&format!(
-                    "Failed to collect images from directory: {dir_path:?}"
-                ))
+            Source::Directory(dir_path) => collect_images_from_dir(dir_path)?
                 .into_iter()
                 .map(FrameData::Path)
                 .collect(),
@@ -46,11 +45,11 @@ impl SourceLoader {
         };
         let len = frames.len();
 
-        Self {
+        Ok(Self {
             current_idx: 0,
             frames,
             len,
-        }
+        })
     }
 
     pub const fn len(&self) -> usize {

@@ -36,7 +36,7 @@ pub fn sequential_infer(
         std::fs::create_dir_all(dir).expect("Failed to create save directory");
     }
 
-    let loader = SourceLoader::new(source);
+    let loader = SourceLoader::new(source)?;
     let total_frames = loader.len();
     tracing::info!("Total frames to process: {}", total_frames);
     tracing::info!("-----------------------------------------");

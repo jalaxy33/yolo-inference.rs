@@ -2,6 +2,8 @@ use image::DynamicImage;
 use std::iter::ExactSizeIterator;
 use std::path::PathBuf;
 
+use crate::error::Result;
+
 use super::source_utils::{collect_images_from_dir, is_image_file};
 use super::{Source, SourceMeta};
 
@@ -22,7 +24,7 @@ pub struct BatchSourceLoader {
 }
 
 impl BatchSourceLoader {
-    pub fn new(source: &Source, batch_size: Option<usize>) -> Self {
+    pub fn new(source: &Source, batch_size: Option<usize>) -> Result<Self> {
         let batch_size = match batch_size {
             Some(size) if size > 0 => size,
             _ => 1,
@@ -37,10 +39,7 @@ impl BatchSourceLoader {
                 }
             }
             Source::Directory(dir_path) => {
-                let frames_vec: Vec<FrameData> = collect_images_from_dir(dir_path)
-                    .expect(&format!(
-                        "Failed to collect images from directory: {dir_path:?}"
-                    ))
+                let frames_vec: Vec<FrameData> = collect_images_from_dir(dir_path)?
                     .into_iter()
                     .map(FrameData::Path)
                     .collect();
@@ -64,13 +63,13 @@ impl BatchSourceLoader {
         };
         let len = batches.len();
         let total_frames = len * batch_size - num_pads;
-        Self {
+        Ok(Self {
             current_idx: 0,
             batches,
             len,
             batch_size,
             total_frames,
-        }
+        })
     }
 
     fn pad_and_chunk(

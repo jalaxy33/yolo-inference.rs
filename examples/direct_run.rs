@@ -1,6 +1,7 @@
 /// An example of directly running prediction without using config files.
 use std::path::PathBuf;
 
+use anyhow::{Context, Result};
 use yolo_inference::{AnnotateConfigs, InferFn, PredictArgs, Source, init_logger, run_prediction};
 
 #[allow(dead_code)]
@@ -16,7 +17,7 @@ enum Checkpoint {
     Batchable,
 }
 
-fn main() {
+fn main() -> Result<()> {
     init_logger();
 
     let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -29,7 +30,7 @@ fn main() {
         Checkpoint::Batchable => checkpoint_dir.join("yolo11n-seg.onnx"),
     };
 
-    let data_scale = DataScale::LargeBatch;
+    let data_scale = DataScale::SmallBatch;
     let source_path = match data_scale {
         DataScale::Image => project_root.join("assets/images/small-batch/bus.jpg"),
         DataScale::SmallBatch => project_root.join("assets/images/small-batch"),
@@ -59,7 +60,11 @@ fn main() {
         ..Default::default()
     };
 
-    if let Some(final_result) = run_prediction(&args).expect("Failed to run prediction") {
+    if let Some(final_result) =
+        run_prediction(&args).with_context(|| "Failed to run prediction".to_string())?
+    {
         tracing::info!("Total annotated images returned: {}", final_result.len());
     }
+
+    Ok(())
 }
