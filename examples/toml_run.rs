@@ -17,7 +17,7 @@ fn main() {
     let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let config_dir = project_root.join("assets/configs/");
 
-    let experiment = Experiment::OneImage;
+    let experiment = Experiment::SmallBatch;
     let config_toml = match experiment {
         Experiment::OneImage => config_dir.join("one-image.toml"),
         Experiment::SmallBatch => config_dir.join("small-batch.toml"),

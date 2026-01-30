@@ -43,6 +43,10 @@ pyo3-stub-gen = { version = "^0.18", optional = true }
 [build-dependencies]
 cxx-build = { version = "^1.0", features = ["parallel"], optional = true }
 
+[dev-dependencies]
+tempfile = "^3.15"
+
+
 [features]
 default = ["cuda", "tensorrt"]
 
