@@ -85,6 +85,32 @@ impl Default for PredictArgs {
     }
 }
 
+impl TryFrom<&PredictArgs> for ul::InferenceConfig {
+    type Error = AppError;
+
+    fn try_from(args: &PredictArgs) -> std::result::Result<Self, Self::Error> {
+        let mut config = Self::new()
+            .with_confidence(args.conf)
+            .with_iou(args.iou)
+            .with_half(args.half)
+            .with_max_det(args.max_det)
+            .with_batch(args.batch.unwrap_or(1));
+
+        if let Some(sz) = args.imgsz {
+            config = config.with_imgsz(sz, sz);
+        }
+
+        if let Some(ref device_str) = args.device {
+            let device: ul::Device = device_str
+                .parse()
+                .map_err(|_| AppError::InvalidDevice(device_str.clone()))?;
+            config = config.with_device(device);
+        }
+
+        Ok(config)
+    }
+}
+
 /// Core prediction API
 ///
 /// Returns:
@@ -92,47 +118,70 @@ impl Default for PredictArgs {
 pub fn run_prediction(args: &PredictArgs) -> Result<Option<Vec<InferResult>>> {
     let start_time = Instant::now();
 
-    // Parse arguments
-    let model_path = &args.model;
-    let conf_threshold = args.conf;
-    let iou_threshold = args.iou;
-    let max_detections = args.max_det;
-    let img_size = args.imgsz;
-    let use_half = args.half;
-    let device: Option<ul::Device> = args
-        .device
-        .as_ref()
-        .map(|d| d.parse().map_err(|_| AppError::InvalidDevice(d.clone())))
-        .transpose()?;
-    let batch_size = args.batch.unwrap_or(1);
-    let infer_fn = &args.infer_fn;
-    let return_annotated = args.return_result;
-
-    // Load model with configurations
-    let mut config = ul::InferenceConfig::new()
-        .with_confidence(conf_threshold)
-        .with_iou(iou_threshold)
-        .with_half(use_half)
-        .with_max_det(max_detections)
-        .with_batch(batch_size);
-
-    if let Some(sz) = img_size {
-        config = config.with_imgsz(sz, sz);
-    }
-    if let Some(dev) = device {
-        config = config.with_device(dev);
-    }
-
-    let mut model = ul::YOLOModel::load_with_config(model_path, config)
+    // Load model using TryFrom trait
+    let config: ul::InferenceConfig = args.try_into()?;
+    let mut model = ul::YOLOModel::load_with_config(&args.model, config)
         .map_err(|e| AppError::ModelLoad(e.to_string()))?;
 
+    // Select infer_fn: Sequential for single image, user choice for batch
+    let infer_fn = if args.source.is_image() {
+        InferFn::Sequential
+    } else {
+        args.infer_fn.clone()
+    };
+
     // Perform inference
-    let mut final_results = if return_annotated {
+    let mut final_results = if args.return_result {
         Some(Vec::new())
     } else {
         None
     };
-    auto_infer(&mut model, infer_fn, args, &mut final_results)?;
+
+    auto_infer(&mut model, &infer_fn, args, &mut final_results)?;
+
+    // Log total duration
+    let duration = start_time.elapsed();
+    tracing::info!("Total prediction time: {:.3?}", duration);
+
+    Ok(final_results)
+}
+
+/// Online prediction - reuses an existing model for inference.
+/// Only supports `Source::Image` and `Source::ImageVec`.
+/// Uses `Sequential` for single image, `args.infer_fn` for batch.
+pub fn run_online_prediction(
+    model: &mut ul::YOLOModel,
+    source: Source,
+    args: &PredictArgs,
+) -> Result<Option<Vec<InferResult>>> {
+    let start_time = Instant::now();
+
+    // Only accept in-memory images
+    if !matches!(source, Source::Image(_) | Source::ImageVec(_)) {
+        return Err(AppError::Config(
+            "Online prediction only supports Source::Image or Source::ImageVec".to_string(),
+        ));
+    }
+
+    // Create a temporary PredictArgs with the provided source
+    let mut online_args = args.clone();
+    online_args.source = source;
+
+    // Select infer_fn: Sequential for single image, user choice for batch
+    let infer_fn = if online_args.source.is_image() {
+        InferFn::Sequential
+    } else {
+        online_args.infer_fn.clone()
+    };
+
+    // Perform inference
+    let mut final_results = if online_args.return_result {
+        Some(Vec::new())
+    } else {
+        None
+    };
+
+    auto_infer(model, &infer_fn, &online_args, &mut final_results)?;
 
     // Log total duration
     let duration = start_time.elapsed();

@@ -5,6 +5,7 @@ mod source_utils;
 
 pub use batch_loader::BatchSourceLoader;
 pub use loader::SourceLoader;
+pub use source_utils::{collect_images_from_dir, is_image_file};
 
 // -- external imports
 use image::DynamicImage;
@@ -49,7 +50,7 @@ impl SourceMeta {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum Source {
     /// No source provided (for online prediction)
     None,
@@ -68,6 +69,19 @@ pub enum Source {
 
     /// List of images in memory
     ImageVec(Vec<DynamicImage>),
+}
+
+impl std::fmt::Debug for Source {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Source::None => write!(f, "None"),
+            Source::ImagePath(p) => write!(f, "ImagePath({:?})", p),
+            Source::Directory(p) => write!(f, "Directory({:?})", p),
+            Source::ImagePathVec(v) => write!(f, "ImagePathVec({} items)", v.len()),
+            Source::Image(img) => write!(f, "Image({}x{})", img.width(), img.height()),
+            Source::ImageVec(v) => write!(f, "ImageVec({} items)", v.len()),
+        }
+    }
 }
 
 impl Source {
