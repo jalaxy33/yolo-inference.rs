@@ -14,7 +14,7 @@ infer_fn = "BatchChannelPipeline"
 
 # results
 annotate = true
-return_result = false
+return_result = true
 
 # logging
 verbose = false
