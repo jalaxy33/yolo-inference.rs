@@ -10,6 +10,9 @@ build/
 .github/
 .wiki/
 
+# AI files
+.claude/
+
 # python venv
 .venv/
 
