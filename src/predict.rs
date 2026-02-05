@@ -137,7 +137,13 @@ pub fn run_prediction(args: &PredictArgs) -> Result<Option<Vec<InferResult>>> {
         None
     };
 
-    auto_infer(&mut model, &infer_fn, args, &mut final_results)?;
+    auto_infer(
+        &mut model,
+        &args.source,
+        &infer_fn,
+        args,
+        &mut final_results,
+    )?;
 
     // Log total duration
     let duration = start_time.elapsed();
@@ -151,7 +157,7 @@ pub fn run_prediction(args: &PredictArgs) -> Result<Option<Vec<InferResult>>> {
 /// Uses `Sequential` for single image, `args.infer_fn` for batch.
 pub fn run_online_prediction(
     model: &mut ul::YOLOModel,
-    source: Source,
+    source: &Source,
     args: &PredictArgs,
 ) -> Result<Option<Vec<InferResult>>> {
     let start_time = Instant::now();
@@ -163,25 +169,21 @@ pub fn run_online_prediction(
         ));
     }
 
-    // Create a temporary PredictArgs with the provided source
-    let mut online_args = args.clone();
-    online_args.source = source;
-
     // Select infer_fn: Sequential for single image, user choice for batch
-    let infer_fn = if online_args.source.is_image() {
+    let infer_fn = if source.is_image() {
         InferFn::Sequential
     } else {
-        online_args.infer_fn.clone()
+        args.infer_fn.clone()
     };
 
     // Perform inference
-    let mut final_results = if online_args.return_result {
+    let mut final_results = if args.return_result {
         Some(Vec::new())
     } else {
         None
     };
 
-    auto_infer(model, &infer_fn, &online_args, &mut final_results)?;
+    auto_infer(model, source, &infer_fn, args, &mut final_results)?;
 
     // Log total duration
     let duration = start_time.elapsed();

@@ -19,7 +19,7 @@ use ultralytics_inference as ul;
 
 use crate::error::Result;
 use crate::predict::PredictArgs;
-use crate::source::SourceMeta;
+use crate::source::{Source, SourceMeta};
 
 // -- enums
 
@@ -85,15 +85,18 @@ pub struct InferResult {
 ///   provided.
 pub fn auto_infer(
     model: &mut ul::YOLOModel,
+    source: &Source,
     infer_fn: &InferFn,
     args: &PredictArgs,
     return_results: &mut Option<Vec<InferResult>>,
 ) -> Result<()> {
     match infer_fn {
-        InferFn::Sequential => sequential_infer(model, args, return_results)?,
-        InferFn::BatchSequential => batch_sequential_infer(model, args, return_results)?,
-        InferFn::ChannelPipeline => channel_pipeline_infer(model, args, return_results)?,
-        InferFn::BatchChannelPipeline => batch_channel_pipeline_infer(model, args, return_results)?,
+        InferFn::Sequential => sequential_infer(model, source, args, return_results)?,
+        InferFn::BatchSequential => batch_sequential_infer(model, source, args, return_results)?,
+        InferFn::ChannelPipeline => channel_pipeline_infer(model, source, args, return_results)?,
+        InferFn::BatchChannelPipeline => {
+            batch_channel_pipeline_infer(model, source, args, return_results)?
+        }
     }
     Ok(())
 }

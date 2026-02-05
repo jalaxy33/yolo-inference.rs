@@ -8,7 +8,7 @@ use crate::annotate::annotate_image;
 use crate::error::Result;
 use crate::predict::PredictArgs;
 use crate::progress_bar::progress_bar_style;
-use crate::source::{BatchSourceLoader, SourceMeta};
+use crate::source::{BatchSourceLoader, Source, SourceMeta};
 
 use super::InferResult;
 use super::batch_utils::{batch_infer_fallback, get_batch_frame_names};
@@ -19,10 +19,10 @@ use super::batch_utils::{batch_infer_fallback, get_batch_frame_names};
 ///   provided.
 pub fn batch_channel_pipeline_infer(
     model: &mut ul::YOLOModel,
+    source: &Source,
     args: &PredictArgs,
     return_results: &mut Option<Vec<InferResult>>,
 ) -> Result<()> {
-    let source = &args.source;
     let annotate = args.annotate;
     let annotate_cfg = &args.annotate_cfg;
     let save_dir = &args.save_dir;
@@ -32,7 +32,7 @@ pub fn batch_channel_pipeline_infer(
     let save = annotate && save_dir.is_some();
 
     tracing::info!("Running channel-based batch pipeline inference...");
-    tracing::info!("[Source]: {:?}", args.source);
+    tracing::info!("[Source]: {:?}", source);
     tracing::info!("Batch Size: {}", batch_size);
 
     if let Some(dir) = save_dir {

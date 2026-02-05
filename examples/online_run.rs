@@ -11,11 +11,11 @@ fn main() -> Result<()> {
     let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let config_dir = project_root.join("assets/configs/");
     let config_toml = config_dir.join("online-predict.toml");
+    let image_dir = project_root.join("assets/images/small-batch/");
 
     // Parse config (without source field)
     let args = parse_toml(&config_toml)
         .with_context(|| format!("Failed to parse TOML config: {:?}", config_toml))?;
-
     tracing::info!("Config loaded, source: {:?}", args.source);
 
     // Load model once using TryFrom trait
@@ -27,9 +27,7 @@ fn main() -> Result<()> {
     tracing::info!("Using infer_fn: {:?}", args.infer_fn);
 
     // Read images from small-batch directory
-    let image_dir = project_root.join("assets/images/small-batch/");
     let image_paths = collect_images_from_dir(&image_dir)?;
-
     tracing::info!("Found {} images in {:?}", image_paths.len(), image_dir);
 
     // Process each image as online prediction
@@ -37,7 +35,7 @@ fn main() -> Result<()> {
         let image = image::open(path)?;
         let source = yolo_inference::Source::Image(image);
 
-        let results = run_online_prediction(&mut model, source, &args)?;
+        let results = run_online_prediction(&mut model, &source, &args)?;
 
         if let Some(ref res) = results {
             tracing::info!("Image {}: processed {} results", idx, res.len());

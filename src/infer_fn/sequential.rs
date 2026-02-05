@@ -5,7 +5,7 @@ use crate::annotate::annotate_image;
 use crate::error::Result;
 use crate::predict::PredictArgs;
 use crate::progress_bar::progress_bar_style;
-use crate::source::SourceLoader;
+use crate::source::{Source, SourceLoader};
 
 use super::InferResult;
 
@@ -15,10 +15,10 @@ use super::InferResult;
 ///   provided.
 pub fn sequential_infer(
     model: &mut ul::YOLOModel,
+    source: &Source,
     args: &PredictArgs,
     return_results: &mut Option<Vec<InferResult>>,
 ) -> Result<()> {
-    let source = &args.source;
     let annotate = args.annotate;
     let annotate_cfg = &args.annotate_cfg;
     let save_dir = &args.save_dir;
@@ -26,7 +26,7 @@ pub fn sequential_infer(
     let save = annotate && save_dir.is_some();
 
     tracing::info!("Running naive sequential inference...");
-    tracing::info!("[Source]: {:?}", args.source);
+    tracing::info!("[Source]: {:?}", source);
 
     if let Some(dir) = save_dir {
         if dir.is_dir() {
