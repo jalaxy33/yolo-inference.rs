@@ -1,6 +1,6 @@
 [package]
 name = "yolo-inference"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 default-run = "infer_main"
 
@@ -22,11 +22,11 @@ required-features = ["python"]
 
 [dependencies]
 ab_glyph = "^0.2"
-anyhow = "1.0.100"
+anyhow = "^1.0"
 image = "^0.25"
 imageproc = "^0.26"
 indicatif = { version = "^0.18", features = ["rayon"] }
-thiserror = "2.0"
+thiserror = "^2.0"
 tracing = "^0.1"
 tracing-subscriber = "^0.3"
 ultralytics-inference = { version = "*", git = "https://github.com/ultralytics/inference.git" }
