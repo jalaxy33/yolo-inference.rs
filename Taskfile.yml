@@ -4,7 +4,7 @@ version: "3"
 
 tasks:
   default:
-    desc: Print a greeting message
+    desc: Deploy the project (build C++ and Python extensions)
     cmds:
       - task: cpp
       - task: develop

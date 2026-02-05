@@ -100,6 +100,7 @@ endfunction()
 
 set(targetname cpp_bin)
 add_executable(${targetname} cpp_src/main.cpp)
+target_include_directories(${targetname}  PRIVATE cpp_headers/)
 
 setup_rust_library(${targetname} "yolo_inference")
 
