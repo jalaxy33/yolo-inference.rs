@@ -31,6 +31,11 @@ impl BatchSourceLoader {
         };
 
         let (batches, num_pads) = match source {
+            Source::None => {
+                return Err(crate::error::AppError::Config(
+                    "Source::None cannot be used with BatchSourceLoader".to_string(),
+                ));
+            }
             Source::ImagePath(p) => {
                 if is_image_file(p) {
                     (vec![vec![FrameData::Path(p.clone())]], 0)

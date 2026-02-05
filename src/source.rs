@@ -51,6 +51,9 @@ impl SourceMeta {
 
 #[derive(Debug, Clone)]
 pub enum Source {
+    /// No source provided (for online prediction)
+    None,
+
     /// Path to a single image file
     ImagePath(PathBuf),
 
@@ -68,6 +71,11 @@ pub enum Source {
 }
 
 impl Source {
+    /// Returns true if source is None
+    pub fn is_none(&self) -> bool {
+        matches!(self, Source::None)
+    }
+
     pub fn is_batch(&self) -> bool {
         matches!(
             self,
@@ -122,12 +130,13 @@ impl From<Vec<DynamicImage>> for Source {
 
 impl Default for Source {
     fn default() -> Self {
-        Source::ImagePath(PathBuf::new())
+        Source::None
     }
 }
 
 /// Custom deserializer for Source from toml
 /// Only supports PathBuf-based variants (ImagePath, Directory, ImagePathVec)
+/// Empty string results in Source::None
 pub fn deserialize_source<'de, D>(deserializer: D) -> Result<Source, D::Error>
 where
     D: serde::Deserializer<'de>,
@@ -141,8 +150,22 @@ where
     }
 
     match PathOrVec::deserialize(deserializer)? {
-        PathOrVec::Path(path) => Ok(path.into()),
-        PathOrVec::Vec(paths) => Ok(paths.into()),
+        PathOrVec::Path(path) => {
+            // Empty path becomes None
+            if path.as_os_str().is_empty() {
+                Ok(Source::None)
+            } else {
+                Ok(path.into())
+            }
+        }
+        PathOrVec::Vec(paths) => {
+            // Empty vec becomes None
+            if paths.is_empty() {
+                Ok(Source::None)
+            } else {
+                Ok(paths.into())
+            }
+        }
     }
 }
 

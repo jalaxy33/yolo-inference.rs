@@ -23,6 +23,11 @@ pub struct SourceLoader {
 impl SourceLoader {
     pub fn new(source: &Source) -> Result<Self> {
         let frames = match source {
+            Source::None => {
+                return Err(crate::error::AppError::Config(
+                    "Source::None cannot be used with SourceLoader".to_string(),
+                ));
+            }
             Source::ImagePath(path) => {
                 if is_image_file(path) {
                     vec![FrameData::Path(path.clone())]

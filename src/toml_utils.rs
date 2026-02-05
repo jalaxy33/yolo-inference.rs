@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use crate::annotate::AnnotateConfigs;
 use crate::error::{AppError, Result};
 use crate::predict::PredictArgs;
+use crate::source::Source;
 
 // -- config
 
@@ -51,14 +52,11 @@ impl TomlConfig {
             self.predict.model = project_root.join(&self.predict.model);
         }
 
-        // Resolve source path
+        // Resolve source path (skip if None)
         self.predict.source = match &self.predict.source {
-            crate::source::Source::ImagePath(p) if !p.is_absolute() => {
-                crate::source::Source::ImagePath(project_root.join(p))
-            }
-            crate::source::Source::Directory(p) if !p.is_absolute() => {
-                crate::source::Source::Directory(project_root.join(p))
-            }
+            Source::None => Source::None,
+            Source::ImagePath(p) if !p.is_absolute() => Source::ImagePath(project_root.join(p)),
+            Source::Directory(p) if !p.is_absolute() => Source::Directory(project_root.join(p)),
             _ => self.predict.source.clone(),
         };
 
@@ -170,5 +168,48 @@ show_box = true
         let invalid_toml_path = temp_dir.path().join("invalid.toml");
         fs::write(&invalid_toml_path, "invalid toml [[[").unwrap();
         assert!(parse_toml(&invalid_toml_path).is_err());
+    }
+
+    #[test]
+    fn test_from_toml_without_source_field() {
+        let temp_dir = TempDir::new().unwrap();
+        let toml_path = temp_dir.path().join("config.toml");
+        let toml_content = r#"
+[predict]
+model = "test.onnx"
+conf = 0.5
+
+[annotate]
+show_box = true
+"#;
+        fs::write(&toml_path, toml_content).unwrap();
+
+        let config = TomlConfig::from_toml(&toml_path).unwrap();
+
+        // Source should be default (None)
+        assert!(config.predict.source.is_none());
+        assert_eq!(config.predict.conf, 0.5);
+    }
+
+    #[test]
+    fn test_from_toml_with_empty_source() {
+        let temp_dir = TempDir::new().unwrap();
+        let toml_path = temp_dir.path().join("config.toml");
+        let toml_content = r#"
+[predict]
+model = "test.onnx"
+source = ""
+conf = 0.5
+
+[annotate]
+show_box = true
+"#;
+        fs::write(&toml_path, toml_content).unwrap();
+
+        let config = TomlConfig::from_toml(&toml_path).unwrap();
+
+        // Empty source string should become None
+        assert!(config.predict.source.is_none());
+        assert_eq!(config.predict.conf, 0.5);
     }
 }

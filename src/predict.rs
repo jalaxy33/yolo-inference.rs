@@ -66,7 +66,7 @@ impl Default for PredictArgs {
     fn default() -> Self {
         Self {
             model: PathBuf::new(),
-            source: Source::ImagePath(PathBuf::new()),
+            source: Default::default(),
             conf: 0.25,
             iou: 0.45,
             max_det: 300,
