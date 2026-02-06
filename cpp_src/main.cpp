@@ -105,6 +105,32 @@ void run_online_predict(const path& config_toml) {
         online_predict_from_toml(std::move(images), config_toml.string());
 
     cout << "Prediction completed. Results count: " << results.size() << endl;
+
+    // Test get_result_annotated (clone version)
+    cout << "\nTesting get_result_annotated (clone version):" << endl;
+    for (size_t i = 0; i < results.size(); i++) {
+        // rust::Box automatically manages memory
+        rust::Box<RustImage> annotated = get_result_annotated(*results[i]);
+
+        // Test is_image_empty function
+        bool empty = is_image_empty(*annotated);
+        ImageInfo info = image_info(*annotated);
+        cout << "  Result[" << i << "] annotated image: " << info.width
+             << "x" << info.height << ", channels=" << info.channels
+             << ", empty=" << (empty ? "true" : "false") << endl;
+    }
+
+    // Test take_result_annotated (ownership transfer version)
+    cout << "\nTesting take_result_annotated (take version):" << endl;
+    for (size_t i = 0; i < results.size(); i++) {
+        rust::Box<RustImage> annotated = take_result_annotated(*results[i]);
+
+        bool empty = is_image_empty(*annotated);
+        ImageInfo info = image_info(*annotated);
+        cout << "  Result[" << i << "] took annotated image: " << info.width
+             << "x" << info.height << ", channels=" << info.channels
+             << ", empty=" << (empty ? "true" : "false") << endl;
+    }
 }
 
 int main() {
