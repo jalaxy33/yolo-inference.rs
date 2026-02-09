@@ -1,7 +1,7 @@
 //! C++ FFI module - exposes Rust functions to C++ via CXX
 
 use cxx::CxxString;
-use image::GenericImageView;
+use image::{DynamicImage, GenericImageView};
 use std::path::PathBuf;
 use ultralytics_inference as ul;
 
@@ -12,8 +12,8 @@ use crate::{Source, init_logger, parse_toml, run_online_prediction, run_predicti
 // FFI Bridge
 //================================================================================
 
-#[cxx::bridge]
-mod ffi {
+#[cxx::bridge(namespace = "yolo_inference")]
+pub mod ffi {
     pub struct ImageInfo {
         width: u32,
         height: u32,
@@ -25,13 +25,14 @@ mod ffi {
         type InferResult;
 
         // Image operations
-        unsafe fn image_from_pixels(
-            pixels: *const u8,
+        unsafe fn image_from_bytes(
+            bytes: *const u8,
             width: u32,
             height: u32,
             channels: u32,
         ) -> Box<RustImage>;
-        fn image_info(image: &RustImage) -> ImageInfo;
+        fn image_to_bytes(image: &RustImage) -> Vec<u8>;
+        fn get_image_info(image: &RustImage) -> ImageInfo;
         fn is_image_empty(image: &RustImage) -> bool;
 
         // Prediction operations
@@ -47,21 +48,37 @@ mod ffi {
     }
 }
 
-use ffi::ImageInfo;
+pub use ffi::ImageInfo;
 
 //================================================================================
 // Types
 //================================================================================
 
 pub struct RustImage {
-    pub inner: image::DynamicImage,
+    pub inner: DynamicImage,
 }
 
 impl RustImage {
-    pub fn new(inner: image::DynamicImage) -> Self {
+    pub fn new(inner: DynamicImage) -> Self {
         Self { inner }
     }
 
+    /// Get image dimensions
+    fn dimensions(&self) -> (u32, u32) {
+        self.inner.dimensions()
+    }
+
+    /// Get number of channels
+    fn channel_count(&self) -> u32 {
+        match &self.inner {
+            DynamicImage::ImageLuma8(_) => 1,
+            DynamicImage::ImageRgb8(_) => 3,
+            DynamicImage::ImageRgba8(_) => 4,
+            _ => 3,
+        }
+    }
+
+    /// Check if image is empty (width == 0 or height == 0).
     pub fn is_empty(&self) -> bool {
         self.inner.width() == 0 || self.inner.height() == 0
     }
@@ -74,27 +91,27 @@ impl RustImage {
 /// Create a RustImage from raw pixel buffer.
 /// `pixels` must be valid for `width * height * channels` bytes.
 /// Supports 1 (grayscale), 3 (RGB), or 4 (RGBA) channels.
-pub unsafe fn image_from_pixels(
-    pixels: *const u8,
+pub unsafe fn image_from_bytes(
+    bytes: *const u8,
     width: u32,
     height: u32,
     channels: u32,
 ) -> Box<RustImage> {
-    assert!(!pixels.is_null(), "Pixel pointer is null");
+    assert!(!bytes.is_null(), "bytes pointer is null");
     assert!(width > 0 && height > 0, "Invalid image dimensions");
 
     let data_len = (width * height * channels) as usize;
-    let pixel_data = unsafe { std::slice::from_raw_parts(pixels, data_len) };
+    let pixel_data = unsafe { std::slice::from_raw_parts(bytes, data_len) };
 
     let dynamic_image = match channels {
         1 => image::GrayImage::from_raw(width, height, pixel_data.to_vec())
-            .map(image::DynamicImage::ImageLuma8)
+            .map(DynamicImage::ImageLuma8)
             .expect("Failed to create grayscale image"),
         3 => image::RgbImage::from_raw(width, height, pixel_data.to_vec())
-            .map(image::DynamicImage::ImageRgb8)
+            .map(DynamicImage::ImageRgb8)
             .expect("Failed to create RGB image"),
         4 => image::RgbaImage::from_raw(width, height, pixel_data.to_vec())
-            .map(image::DynamicImage::ImageRgba8)
+            .map(DynamicImage::ImageRgba8)
             .expect("Failed to create RGBA image"),
         _ => panic!("Unsupported channel count: {}", channels),
     };
@@ -102,19 +119,23 @@ pub unsafe fn image_from_pixels(
     Box::new(RustImage::new(dynamic_image))
 }
 
+/// Extract raw pixel data as byte vector
+pub fn image_to_bytes(image: &RustImage) -> Vec<u8> {
+    match &image.inner {
+        DynamicImage::ImageLuma8(img) => img.as_raw().clone(),
+        DynamicImage::ImageRgb8(img) => img.as_raw().clone(),
+        DynamicImage::ImageRgba8(img) => img.as_raw().clone(),
+        _ => image.inner.to_rgb8().as_raw().clone(),
+    }
+}
+
 /// Get image metadata (width, height, channels).
-pub fn image_info(image: &RustImage) -> ImageInfo {
-    let (w, h) = image.inner.dimensions();
-    let channels = match &image.inner {
-        image::DynamicImage::ImageLuma8(_) => 1,
-        image::DynamicImage::ImageRgb8(_) => 3,
-        image::DynamicImage::ImageRgba8(_) => 4,
-        _ => 3,
-    };
+pub fn get_image_info(image: &RustImage) -> ImageInfo {
+    let (w, h) = image.dimensions();
     ImageInfo {
         width: w,
         height: h,
-        channels,
+        channels: image.channel_count(),
     }
 }
 
@@ -151,7 +172,7 @@ pub fn online_predict_from_toml(
     let mut model =
         ul::YOLOModel::load_with_config(&args.model, config).expect("Failed to load model");
 
-    let dynamic_images: Vec<image::DynamicImage> =
+    let dynamic_images: Vec<DynamicImage> =
         images.into_iter().map(|wrapper| wrapper.inner).collect();
 
     let source = Source::ImageVec(dynamic_images);

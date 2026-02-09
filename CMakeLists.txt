@@ -10,32 +10,32 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # =============================================================================
 # Project Configuration
 # =============================================================================
-
 project(yolo-inference VERSION 0.1.1 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
-
 
 # =============================================================================
 # Rust Library Configuration
 # =============================================================================
-
-function(setup_rust_library targetname rustlibname)
+function(setup_rust_library targetname cratename rustlibname)
     # Fix Windows MSVC runtime library compatibility
     # Always use /MD (Release CRT) to match Rust and vcpkg Release libraries
     if(WIN32 AND MSVC)
         target_compile_options(${targetname} PRIVATE /MD)
+
         # Disable iterator debug level in Debug builds to match Release libraries
         # Use generator expression to work with multi-config generators like Visual Studio
-        target_compile_definitions(${targetname} PRIVATE 
+        target_compile_definitions(${targetname} PRIVATE
             $<$<CONFIG:Debug>:_ITERATOR_DEBUG_LEVEL=0>
         )
     endif()
 
-    # Ensure the Rust library is built
+    # Set Rust build directories
     set(RUST_TARGET_DIR ${CMAKE_SOURCE_DIR}/target)
-    set(rust_lib_dir ${RUST_TARGET_DIR}/release)   # always use release build for compatibility
-    
-    if(NOT EXISTS ${rust_lib_dir})
+    set(RUST_BUILD_TYPE release) # always use release build for compatibility
+    set(RUST_LIB_DIR ${RUST_TARGET_DIR}/${RUST_BUILD_TYPE})
+
+    # Ensure Rust library is built
+    if(NOT EXISTS ${RUST_LIB_DIR})
         message(WARNING "Rust library not found. Building Rust library now...")
         execute_process(
             COMMAND cargo build --release --features cpp
@@ -43,40 +43,40 @@ function(setup_rust_library targetname rustlibname)
         )
     endif()
 
-    # Link Rust library
-    set(rust_lib_path "${rust_lib_dir}/lib${rustlibname}${CMAKE_SHARED_LIBRARY_SUFFIX}")
-    if (WIN32)
-        set(rust_lib_path "${rust_lib_path}.lib")
-    endif()
-    target_link_libraries(${targetname} PRIVATE "${rust_lib_path}")
-
-    # Set include directories for cxx generated headers
-    file(GLOB cxxbridge_include_dirs
-        "${RUST_TARGET_DIR}/cxxbridge/*/src"
-        "${RUST_TARGET_DIR}/cxxbridge/*/src/*"
-    )
+    # Set Rust generated headers directory
     target_include_directories(${targetname} PRIVATE
         ${RUST_TARGET_DIR}/cxxbridge
         ${RUST_TARGET_DIR}/cxxbridge/rust
-        ${cxxbridge_include_dirs}
     )
 
-    # Gather cxxbridge generated source files
-    file(GLOB cxxbridge_src
-        "${RUST_TARGET_DIR}/cxxbridge/*/src/*.rs.cpp"
-        "${RUST_TARGET_DIR}/cxxbridge/*/src/*.rs.cc"
-        "${RUST_TARGET_DIR}/cxxbridge/*/src/*/*.rs.cpp"
-        "${RUST_TARGET_DIR}/cxxbridge/*/src/*/*.rs.cc"
+    # Gather Rust generated source files
+    file(GLOB rust_src
+        "${RUST_TARGET_DIR}/cxxbridge/${cratename}/src/*/*.rs.cpp"
+        "${RUST_TARGET_DIR}/cxxbridge/${cratename}/src/*/*.rs.cc"
     )
 
-    if (cxxbridge_src)
-        target_sources(${targetname} PRIVATE ${cxxbridge_src})
+    if(rust_src)
+        target_sources(${targetname} PRIVATE ${rust_src})
     endif()
+
+    # Link Rust library
+    set(rust_lib "${RUST_LIB_DIR}/lib${rustlibname}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+
+    if(WIN32)
+        set(rust_lib "${rust_lib}.lib")
+    endif()
+
+    if(NOT EXISTS ${rust_lib})
+        message(FATAL_ERROR "Rust library not found at ${rust_lib}. Please build the Rust library.")
+    endif()
+
+    target_link_libraries(${targetname} PRIVATE "${rust_lib}")
 
     # link cxx library
     file(GLOB cxx_lib_files
-        "${rust_lib_dir}/build/cxx-*/out/*${CMAKE_STATIC_LIBRARY_SUFFIX}"
+        "${RUST_LIB_DIR}/build/cxx-*/out/*${CMAKE_STATIC_LIBRARY_SUFFIX}"
     )
+
     foreach(cxx_lib IN LISTS cxx_lib_files)
         target_link_libraries(${targetname} PRIVATE ${cxx_lib})
     endforeach()
@@ -90,20 +90,23 @@ function(setup_rust_library targetname rustlibname)
             COMMENT "Copying Rust DLL for $<CONFIG>."
         )
     endif()
-
 endfunction()
 
+# =============================================================================
+# Common build Configuration
+# =============================================================================
+include_directories(cpp_headers)
 
 # =============================================================================
 # Target Configuration
 # =============================================================================
+set(target1 offline-predict)
+add_executable(${target1} cpp_src/offline-predict.main.cpp)
+setup_rust_library(${target1} "yolo-inference" "yolo_inference")
 
-set(targetname cpp_bin)
-add_executable(${targetname} cpp_src/main.cpp)
-target_include_directories(${targetname}  PRIVATE cpp_headers/)
-
-setup_rust_library(${targetname} "yolo_inference")
-
+set(target2 online-predict)
+add_executable(${target2} cpp_src/online-predict.main.cpp)
+setup_rust_library(${target2} "yolo-inference" "yolo_inference")
 
 # =============================================================================
 # Global Variables
@@ -113,6 +116,4 @@ setup_rust_library(${targetname} "yolo_inference")
 set(PROJECT_ROOT ${CMAKE_SOURCE_DIR})
 
 # Make PROJECT_ROOT visible in C++ code
-target_compile_definitions(${targetname} PRIVATE PROJECT_ROOT="${PROJECT_ROOT}")
-
-
+add_compile_definitions(PROJECT_ROOT="${PROJECT_ROOT}")

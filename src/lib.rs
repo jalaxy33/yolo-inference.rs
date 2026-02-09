@@ -10,7 +10,7 @@ mod toml_utils;
 
 pub use annotate::{AnnotateConfigs, annotate_image};
 pub use error::{AppError, Result};
-pub use infer_fn::{InferFn, auto_infer};
+pub use infer_fn::{InferFn, InferResult, auto_infer};
 pub use logging::init_logger;
 pub use progress_bar::progress_bar_style;
 pub use source::{BatchSourceLoader, Source, SourceLoader, SourceMeta, collect_images_from_dir,
