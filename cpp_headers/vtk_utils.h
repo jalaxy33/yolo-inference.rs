@@ -7,8 +7,8 @@
 #include <vtkImageData.h>
 #include <vtkImageReader2.h>
 #include <vtkImageReader2Factory.h>
-#include <vtkSmartPointer.h>
 #include <vtkPNGWriter.h>
+#include <vtkSmartPointer.h>
 
 using namespace std;
 using namespace filesystem;
@@ -23,7 +23,7 @@ inline Ptr<vtkImageData> load_vtk_image(const path& image_path) {
         return nullptr;
     }
 
-    auto reader = vtkSmartPointer<vtkImageReader2>::Take(
+    auto reader = Ptr<vtkImageReader2>::Take(
         vtkImageReader2Factory::CreateImageReader2(image_path.string().c_str()));
 
     if (!reader) {
@@ -67,7 +67,6 @@ inline vector<Ptr<vtkImageData>> gather_vtk_images(const vector<path>& image_pat
     return images;
 }
 
-
 inline void save_vtk_image(const Ptr<vtkImageData>& vtk_image, const path& save_path) {
     if (!vtk_image) {
         cerr << "Error: Cannot save null vtkImageData to: " << save_path << endl;
@@ -85,6 +84,5 @@ inline void save_vtk_image(const Ptr<vtkImageData>& vtk_image, const path& save_
     writer->SetInputData(vtk_image);
     writer->Write();
 }
-
 
 #endif  // ENABLE_VTK
