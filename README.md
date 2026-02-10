@@ -24,7 +24,7 @@ cargo build -r --features cpp
 cmake -B build/Release -DCMAKE_BUILD_TYPE=Release
 cmake --build build/Release
 
-# Run (the following targets)
+# Run (Linux/MacOS)
 ./build/Release/offline-predict
 ./build/Release/online-predict
 ./build/Release/vtk-api
