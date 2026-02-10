@@ -108,8 +108,8 @@ int main() {
     auto images = gather_rust_images(image_paths);
 
     // Run online inference via Rust FFI
-    Vec<Box<InferResult>> results =
-        yolo_inference::online_predict_from_toml(std::move(images), config_toml.string(), project_root.string());
+    Vec<Box<InferResult>> results = yolo_inference::online_predict_from_toml(
+        std::move(images), config_toml.string(), project_root.string());
 
     cout << "\n--------------------------------\n"
          << "Prediction completed. Results count: " << results.size() << endl;

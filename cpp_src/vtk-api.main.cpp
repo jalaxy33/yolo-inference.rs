@@ -57,8 +57,8 @@ void run_batch_prediction(const path& image_dir, const path& config_toml,
 
     // Run inference on RustImages
     path project_root = PROJECT_ROOT;
-    Vec<Box<InferResult>> results =
-        yolo_inference::online_predict_from_toml(std::move(rs_images), config_toml.string(), project_root.string());
+    Vec<Box<InferResult>> results = yolo_inference::online_predict_from_toml(
+        std::move(rs_images), config_toml.string(), project_root.string());
 
     // Get annotated images from results
     vector<Ptr<vtkImageData>> annotateds = get_batch_annotated(results);
