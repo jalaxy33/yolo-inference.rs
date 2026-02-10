@@ -38,7 +38,7 @@ def main() -> None:
     print(f"Using config: {config_toml}")
 
     # Run prediction
-    predict_from_toml(str(config_toml))
+    predict_from_toml(str(config_toml), str(project_root))
 
 
 if __name__ == "__main__":

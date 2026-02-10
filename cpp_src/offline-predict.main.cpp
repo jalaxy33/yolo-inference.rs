@@ -40,7 +40,7 @@ int main() {
 
     cout << "Using config: " << config_toml << endl;
 
-    yolo_inference::predict_from_toml(config_toml);
+    yolo_inference::predict_from_toml(config_toml.string(), project_root.string());
 
     return 0;
 }

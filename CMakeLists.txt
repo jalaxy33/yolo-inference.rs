@@ -13,7 +13,7 @@ option(RUN_VTK "Run VTK example" ON)
 # =============================================================================
 # Project Configuration
 # =============================================================================
-project(yolo-inference VERSION 0.1.1 LANGUAGES C CXX)
+project(yolo-inference VERSION 0.1.2 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 
 # =============================================================================

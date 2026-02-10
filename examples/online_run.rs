@@ -14,7 +14,7 @@ fn main() -> Result<()> {
     let image_dir = project_root.join("assets/images/small-batch/");
 
     // Parse config (without source field)
-    let args = parse_toml(&config_toml)
+    let args = parse_toml(&config_toml, &project_root)
         .with_context(|| format!("Failed to parse TOML config: {:?}", config_toml))?;
     tracing::info!("Config loaded, source: {:?}", args.source);
 

@@ -1,15 +1,21 @@
 use pyo3::prelude::*;
 use pyo3_stub_gen::define_stub_info_gatherer;
 use pyo3_stub_gen::derive::*;
+use std::path::PathBuf;
 
 use crate::{init_logger, parse_toml, run_prediction};
 
+/// Run prediction from TOML config file.
+///
+/// Args:
+///     config_toml: Path to the TOML config file
+///     project_root: Base directory for resolving relative paths
 #[pyfunction]
 #[gen_stub_pyfunction]
-pub fn predict_from_toml(config_toml: &str) {
+pub fn predict_from_toml(config_toml: &str, project_root: &str) {
     init_logger();
-    let args =
-        parse_toml(&std::path::PathBuf::from(config_toml)).expect("Failed to parse TOML config");
+    let args = parse_toml(&PathBuf::from(config_toml), &PathBuf::from(project_root))
+        .expect("Failed to parse TOML config");
     run_prediction(&args).expect("Prediction failed");
 }
 

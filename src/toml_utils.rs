@@ -1,6 +1,6 @@
 // -- imports
 use serde::Deserialize;
-use std::path::PathBuf;
+use std::path::Path;
 
 use crate::annotate::AnnotateConfigs;
 use crate::error::{AppError, Result};
@@ -25,7 +25,20 @@ impl TomlConfig {
     /// - The path is not a valid toml file
     /// - File read fails
     /// - TOML parsing fails
-    pub fn from_toml(toml_path: &PathBuf) -> Result<Self> {
+    /// Parse TOML config file with explicit project root for path resolution.
+    ///
+    /// # Arguments
+    ///
+    /// * `toml_path` - Path to the TOML config file
+    /// * `project_root` - Base directory for resolving relative paths
+    ///
+    /// # Errors
+    ///
+    /// Returns `AppError` if:
+    /// - The path is not a valid toml file
+    /// - File read fails
+    /// - TOML parsing fails
+    pub fn from_toml(toml_path: &Path, project_root: &Path) -> Result<Self> {
         if !toml_path.is_file() || toml_path.extension().map_or(false, |ext| ext != "toml") {
             return Err(AppError::Config(format!(
                 "TOML config path is not a valid .toml file: {:?}",
@@ -35,7 +48,7 @@ impl TomlConfig {
 
         let content = std::fs::read_to_string(toml_path)?;
         let mut config: Self = toml::from_str(&content)?;
-        config.resolve_paths();
+        config.resolve_paths(project_root);
 
         // Transfer annotate config to predict args
         config.predict.annotate_cfg = config.annotate.clone();
@@ -44,9 +57,7 @@ impl TomlConfig {
     }
 
     /// Resolve relative paths against project root
-    fn resolve_paths(&mut self) {
-        let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-
+    fn resolve_paths(&mut self, project_root: &Path) {
         // Resolve model path
         if !self.predict.model.is_absolute() {
             self.predict.model = project_root.join(&self.predict.model);
@@ -77,8 +88,18 @@ impl From<TomlConfig> for PredictArgs {
 
 // -- public API
 
-pub fn parse_toml(toml_path: &PathBuf) -> Result<PredictArgs> {
-    TomlConfig::from_toml(toml_path).map(Into::into)
+/// Parse TOML config file and return PredictArgs.
+///
+/// # Arguments
+///
+/// * `toml_path` - Path to the TOML config file
+/// * `project_root` - Base directory for resolving relative paths
+///
+/// # Errors
+///
+/// Returns `AppError` if TOML parsing or path resolution fails.
+pub fn parse_toml(toml_path: &Path, project_root: &Path) -> Result<PredictArgs> {
+    TomlConfig::from_toml(toml_path, project_root).map(Into::into)
 }
 
 // -- tests
@@ -87,6 +108,7 @@ pub fn parse_toml(toml_path: &PathBuf) -> Result<PredictArgs> {
 mod tests {
     use super::*;
     use std::fs;
+    use std::path::PathBuf;
     use tempfile::TempDir;
 
     #[test]
@@ -112,7 +134,7 @@ top_k = 3
 "#;
         fs::write(&toml_path, toml_content).unwrap();
 
-        let config = TomlConfig::from_toml(&toml_path).unwrap();
+        let config = TomlConfig::from_toml(&toml_path, temp_dir.path()).unwrap();
 
         assert_eq!(config.predict.conf, 0.7);
         assert_eq!(config.predict.iou, 0.5);
@@ -142,7 +164,7 @@ show_box = true
 "#;
         fs::write(&toml_path, toml_content).unwrap();
 
-        let args = parse_toml(&toml_path).unwrap();
+        let args = parse_toml(&toml_path, temp_dir.path()).unwrap();
 
         assert_eq!(args.conf, 0.5);
         assert!(args.annotate_cfg.show_box);
@@ -151,7 +173,8 @@ show_box = true
     #[test]
     fn test_from_toml_invalid_path() {
         let invalid_path = PathBuf::from("/nonexistent/config.toml");
-        assert!(TomlConfig::from_toml(&invalid_path).is_err());
+        let project_root = PathBuf::from("/tmp");
+        assert!(TomlConfig::from_toml(&invalid_path, &project_root).is_err());
     }
 
     #[test]
@@ -159,7 +182,7 @@ show_box = true
         let temp_dir = TempDir::new().unwrap();
         let invalid_path = temp_dir.path().join("config.txt");
         fs::write(&invalid_path, "predict = { model = \"test.onnx\" }").unwrap();
-        assert!(TomlConfig::from_toml(&invalid_path).is_err());
+        assert!(TomlConfig::from_toml(&invalid_path, temp_dir.path()).is_err());
     }
 
     #[test]
@@ -167,7 +190,7 @@ show_box = true
         let temp_dir = TempDir::new().unwrap();
         let invalid_toml_path = temp_dir.path().join("invalid.toml");
         fs::write(&invalid_toml_path, "invalid toml [[[").unwrap();
-        assert!(parse_toml(&invalid_toml_path).is_err());
+        assert!(parse_toml(&invalid_toml_path, temp_dir.path()).is_err());
     }
 
     #[test]
@@ -184,7 +207,7 @@ show_box = true
 "#;
         fs::write(&toml_path, toml_content).unwrap();
 
-        let config = TomlConfig::from_toml(&toml_path).unwrap();
+        let config = TomlConfig::from_toml(&toml_path, temp_dir.path()).unwrap();
 
         // Source should be default (None)
         assert!(config.predict.source.is_none());
@@ -206,7 +229,7 @@ show_box = true
 "#;
         fs::write(&toml_path, toml_content).unwrap();
 
-        let config = TomlConfig::from_toml(&toml_path).unwrap();
+        let config = TomlConfig::from_toml(&toml_path, temp_dir.path()).unwrap();
 
         // Empty source string should become None
         assert!(config.predict.source.is_none());

@@ -36,10 +36,11 @@ pub mod ffi {
         fn is_image_empty(image: &RustImage) -> bool;
 
         // Prediction operations
-        fn predict_from_toml(config_toml: &CxxString);
+        fn predict_from_toml(config_toml: &CxxString, project_root: &CxxString);
         fn online_predict_from_toml(
             images: Vec<Box<RustImage>>,
             config_toml: &CxxString,
+            project_root: &CxxString,
         ) -> Vec<Box<InferResult>>;
 
         // InferResult accessors
@@ -158,23 +159,30 @@ pub fn is_image_empty(image: &RustImage) -> bool {
 //================================================================================
 
 /// Run batch prediction from TOML config file path.
-pub fn predict_from_toml(config_toml: &CxxString) {
+pub fn predict_from_toml(config_toml: &CxxString, project_root: &CxxString) {
     init_logger();
-    let args =
-        parse_toml(&PathBuf::from(config_toml.to_string())).expect("Failed to parse TOML config");
+    let args = parse_toml(
+        &PathBuf::from(config_toml.to_string()),
+        &PathBuf::from(project_root.to_string()),
+    )
+    .expect("Failed to parse TOML config");
     run_prediction(&args).expect("Prediction failed");
 }
 
 /// Run online prediction with in-memory images.
-/// Takes images and TOML config, returns inference results.
+/// Takes images, TOML config and project root, returns inference results.
 pub fn online_predict_from_toml(
     images: Vec<Box<RustImage>>,
     config_toml: &CxxString,
+    project_root: &CxxString,
 ) -> Vec<Box<InferResult>> {
     init_logger();
 
-    let args =
-        parse_toml(&PathBuf::from(config_toml.to_string())).expect("Failed to parse TOML config");
+    let args = parse_toml(
+        &PathBuf::from(config_toml.to_string()),
+        &PathBuf::from(project_root.to_string()),
+    )
+    .expect("Failed to parse TOML config");
 
     let config: ul::InferenceConfig = (&args).try_into().expect("Invalid inference config");
     let mut model =

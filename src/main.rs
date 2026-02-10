@@ -27,7 +27,7 @@ fn main() -> Result<()> {
         Experiment::UnbatchableModel => config_dir.join("unbatchable-model.toml"),
     };
 
-    let args = parse_toml(&config_toml)
+    let args = parse_toml(&config_toml, &project_root)
         .with_context(|| format!("Failed to parse TOML config: {:?}", config_toml))?;
 
     dbg!(&args);
