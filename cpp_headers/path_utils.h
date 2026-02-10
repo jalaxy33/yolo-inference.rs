@@ -19,7 +19,8 @@ inline vector<path> list_image_paths(const path& image_dir) {
     assert_path_exists(image_dir);
 
     vector<path> image_paths;
-    const vector<string> image_extensions = {"jpg", "jpeg", "png", "bmp", "gif", "webp", "tiff", "tif"};
+    const vector<string> image_extensions = {"jpg", "jpeg", "png",  "bmp",
+                                             "gif", "webp", "tiff", "tif"};
 
     for (const auto& entry : directory_iterator(image_dir)) {
         if (entry.is_regular_file()) {
@@ -34,11 +35,25 @@ inline vector<path> list_image_paths(const path& image_dir) {
                 c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
             }
 
-            if (find(image_extensions.begin(), image_extensions.end(), ext) != image_extensions.end()) {
+            if (find(image_extensions.begin(), image_extensions.end(), ext) !=
+                image_extensions.end()) {
                 image_paths.push_back(file_path);
             }
         }
     }
 
     return image_paths;
+}
+
+inline void clean_and_create_dir(const path& dir) {
+    if (exists(dir)) {
+        cerr << "Directory already exists: " << dir << ". Clearing contents..." << endl;
+        // Directory exists, clear it
+        for (const auto& entry : directory_iterator(dir)) {
+            remove_all(entry.path());
+        }
+    } else {
+        // Directory does not exist, create it recursively
+        create_directories(dir);
+    }
 }

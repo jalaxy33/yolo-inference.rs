@@ -14,8 +14,11 @@ using yolo_inference::ImageInfo;
 using yolo_inference::InferResult;
 using yolo_inference::RustImage;
 
-rust::Vec<rust::Box<RustImage>> gather_rust_images(const vector<path>& image_paths) {
-    rust::Vec<rust::Box<RustImage>> images;
+using rust::Box;
+using rust::Vec;
+
+Vec<Box<RustImage>> gather_rust_images(const vector<path>& image_paths) {
+    Vec<Box<RustImage>> images;
 
     for (const auto& img_path : image_paths) {
         cout << "--------------------------------\n"
@@ -35,14 +38,17 @@ rust::Vec<rust::Box<RustImage>> gather_rust_images(const vector<path>& image_pat
             continue;
         }
 
-        cout << "  Loaded image: (" << width << "x" << height << ", " << channels << " channels)" << endl;
+        cout << "  Loaded image: (" << width << "x" << height << ", " << channels << " channels)"
+             << endl;
 
         // Gather RustImages via FFI
         if (channels == 1 || channels == 3 || channels == 4) {
-            rust::Box<RustImage> rust_img = yolo_inference::image_from_bytes(bytes, width, height, channels);
+            Box<RustImage> rust_img =
+                yolo_inference::image_from_bytes(bytes, width, height, channels);
             ImageInfo info = yolo_inference::get_image_info(*rust_img);
 
-            cout << "  -> RustImage: " << info.width << "x" << info.height << ", channels=" << info.channels << endl;
+            cout << "  -> RustImage: " << info.width << "x" << info.height
+                 << ", channels=" << info.channels << endl;
 
             images.push_back(std::move(rust_img));
         } else {
@@ -56,11 +62,11 @@ rust::Vec<rust::Box<RustImage>> gather_rust_images(const vector<path>& image_pat
     return images;
 }
 
-void test_get_annotated(const rust::Vec<rust::Box<InferResult>>& results) {
+void test_get_annotated(const Vec<Box<InferResult>>& results) {
     cout << "\nTesting get_result_annotated (clone version):" << endl;
     for (size_t i = 0; i < results.size(); i++) {
         // rust::Box automatically manages memory
-        rust::Box<RustImage> annotated = yolo_inference::get_result_annotated(*results[i]);
+        Box<RustImage> annotated = yolo_inference::get_result_annotated(*results[i]);
 
         // Test is_image_empty function
         bool empty = is_image_empty(*annotated);
@@ -70,11 +76,11 @@ void test_get_annotated(const rust::Vec<rust::Box<InferResult>>& results) {
     }
 }
 
-void test_take_annotated(rust::Vec<rust::Box<InferResult>> results) {
+void test_take_annotated(Vec<Box<InferResult>> results) {
     cout << "\nTesting get_result_annotated (take version):" << endl;
     for (size_t i = 0; i < results.size(); i++) {
         // Take ownership of the annotated image
-        rust::Box<RustImage> annotated = yolo_inference::take_result_annotated(*results[i]);
+        Box<RustImage> annotated = yolo_inference::take_result_annotated(*results[i]);
 
         // Test is_image_empty function
         bool empty = is_image_empty(*annotated);
@@ -102,7 +108,7 @@ int main() {
     auto images = gather_rust_images(image_paths);
 
     // Run online inference via Rust FFI
-    rust::Vec<rust::Box<InferResult>> results =
+    Vec<Box<InferResult>> results =
         yolo_inference::online_predict_from_toml(std::move(images), config_toml.string());
 
     cout << "\n--------------------------------\n"

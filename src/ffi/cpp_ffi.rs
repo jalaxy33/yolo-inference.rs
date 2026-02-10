@@ -97,6 +97,10 @@ pub unsafe fn image_from_bytes(
     height: u32,
     channels: u32,
 ) -> Box<RustImage> {
+    // Allow zero-size images as empty placeholders
+    if width == 0 || height == 0 {
+        return Box::new(RustImage::new(image::DynamicImage::new_rgba8(0, 0)));
+    }
     assert!(!bytes.is_null(), "bytes pointer is null");
     assert!(width > 0 && height > 0, "Invalid image dimensions");
 
@@ -121,6 +125,10 @@ pub unsafe fn image_from_bytes(
 
 /// Extract raw pixel data as byte vector
 pub fn image_to_bytes(image: &RustImage) -> Vec<u8> {
+    // Return empty vec for empty image
+    if image.is_empty() {
+        return Vec::new();
+    }
     match &image.inner {
         DynamicImage::ImageLuma8(img) => img.as_raw().clone(),
         DynamicImage::ImageRgb8(img) => img.as_raw().clone(),

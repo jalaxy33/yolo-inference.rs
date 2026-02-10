@@ -7,6 +7,9 @@ cmake_minimum_required(VERSION 4.0.0)
 # generate `compile_commands.json` for clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# options
+option(RUN_VTK "Run VTK example" ON)
+
 # =============================================================================
 # Project Configuration
 # =============================================================================
@@ -93,6 +96,35 @@ function(setup_rust_library targetname cratename rustlibname)
 endfunction()
 
 # =============================================================================
+# VTK Configuration
+# =============================================================================
+function(setup_vtk targetname)
+    if(NOT RUN_VTK)
+        message(WARNING "VTK example is disabled.")
+        return()
+    endif()
+
+    if(UNIX)
+        add_definitions(-DENABLE_VTK)
+
+        # Linux specific VTK setup
+        include_directories(/usr/include/vtk)
+        find_library(VTK_COMMON_CORE vtkCommonCore PATHS /usr/lib)
+        find_library(VTK_COMMON_DATA_MODEL vtkCommonDataModel PATHS /usr/lib)
+        find_library(VTK_COMMON_EXECUTION_MODEL vtkCommonExecutionModel PATHS /usr/lib)
+        find_library(VTK_SYS vtksys PATHS /usr/lib)
+        find_library(VTK_IO_IMAGE vtkIOImage PATHS /usr/lib)
+
+        set(VTK_LIBRARIES ${VTK_COMMON_CORE} ${VTK_COMMON_DATA_MODEL}
+            ${VTK_COMMON_EXECUTION_MODEL} ${VTK_SYS} ${VTK_IO_IMAGE})
+
+        target_link_libraries(${targetname} PRIVATE ${VTK_LIBRARIES})
+    else()
+        message(FATAL_ERROR "VTK setup is currently only implemented for Linux in this example.")
+    endif()
+endfunction()
+
+# =============================================================================
 # Common build Configuration
 # =============================================================================
 include_directories(cpp_headers)
@@ -107,6 +139,11 @@ setup_rust_library(${target1} "yolo-inference" "yolo_inference")
 set(target2 online-predict)
 add_executable(${target2} cpp_src/online-predict.main.cpp)
 setup_rust_library(${target2} "yolo-inference" "yolo_inference")
+
+set(target3 vtk-api)
+add_executable(${target3} cpp_src/vtk-api.main.cpp)
+setup_rust_library(${target3} "yolo-inference" "yolo_inference")
+setup_vtk(${target3})
 
 # =============================================================================
 # Global Variables
