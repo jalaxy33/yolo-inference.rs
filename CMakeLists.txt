@@ -63,9 +63,14 @@ function(setup_rust_library targetname cratename rustlibname)
     endif()
 
     # Link Rust library
-    set(rust_lib "${RUST_LIB_DIR}/lib${rustlibname}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    if(NOT WIN32)
+        set(rustlibname "lib${rustlibname}")
+    endif()
+
+    set(rust_lib "${RUST_LIB_DIR}/${rustlibname}${CMAKE_SHARED_LIBRARY_SUFFIX}")
 
     if(WIN32)
+        set(rust_dll "${rust_lib}")
         set(rust_lib "${rust_lib}.lib")
     endif()
 
@@ -87,8 +92,8 @@ function(setup_rust_library targetname cratename rustlibname)
     # Copy DLL on Windows
     if(WIN32)
         add_custom_command(TARGET ${targetname} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${rust_lib_files}"
+            COMMAND ${CMAKE_COMMAND} -E copy
+            "${rust_dll}"
             $<TARGET_FILE_DIR:${targetname}>
             COMMENT "Copying Rust DLL for $<CONFIG>."
         )
@@ -119,6 +124,18 @@ function(setup_vtk targetname)
             ${VTK_COMMON_EXECUTION_MODEL} ${VTK_SYS} ${VTK_IO_IMAGE})
 
         target_link_libraries(${targetname} PRIVATE ${VTK_LIBRARIES})
+    elseif(WIN32)
+        add_definitions(-DENABLE_VTK)
+
+        find_package(VTK)
+        if(VTK_FOUND)
+            message(STATUS "VTK FOUND${VTK_LIBRARIES}")
+            include_directories(${VTK_INCLUDE_DIRS})
+            LINK_LIBRARIES(${VTK_LIBRARIES})
+            target_link_libraries(${targetname} PRIVATE ${VTK_LIBRARIES})
+        else(VTK_FOUND)
+            message(FATAL_ERROR "VTK NOT FOUND")
+        endif(VTK_FOUND)
     else()
         message(FATAL_ERROR "VTK setup is currently only implemented for Linux in this example.")
     endif()
