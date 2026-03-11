@@ -2,7 +2,7 @@
 # Preamble
 # =============================================================================
 
-cmake_minimum_required(VERSION 4.0.0)
+cmake_minimum_required(VERSION 3.0.0)
 
 # generate `compile_commands.json` for clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
